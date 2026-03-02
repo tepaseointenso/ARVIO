@@ -10,7 +10,6 @@ All notable changes to this project are documented in this file.
 ## [1.8.2] - 2026-03-02
 
 ### Changed
-- TMDB and Trakt API calls now go directly to the APIs instead of through ARVIO Cloud proxy, drastically reducing cloud function usage.
 - Cross-device cloud sync (IPTV, addons, catalogs, watchlist, settings) now triggers on every profile selection instead of only on first app launch.
 - Playback starts significantly faster — removed redundant startup buffer gate and lowered initial buffer threshold.
 - App version updated to `1.8.2` (`versionCode 182`).
