@@ -62,6 +62,7 @@ import com.arflix.tv.ui.theme.BackgroundDark
 import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 
 /**
  * Premium full-screen modal for displaying person/cast details
@@ -259,7 +260,7 @@ fun PersonModal(
                         // Biography section
                         if (person.biography.isNotEmpty()) {
                             Text(
-                                text = "Biography",
+                                text = tr("Biography"),
                                 style = ArflixTypography.sectionTitle.copy(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Medium,
@@ -294,7 +295,7 @@ fun PersonModal(
                             }
 
                             Text(
-                                text = "Known For",
+                                text = tr("Known For"),
                                 style = ArflixTypography.sectionTitle.copy(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Medium,
@@ -417,7 +418,7 @@ private fun HorizontalKnownForCard(
                                 .background(Color.White.copy(alpha = 0.5f), CircleShape)
                         )
                         Text(
-                            text = if (item.mediaType == MediaType.TV) "TV Series" else "Movie",
+                            text = if (item.mediaType == MediaType.TV) tr("TV Series") else tr("Movie"),
                             style = ArflixTypography.caption.copy(fontSize = 11.sp),
                             color = Color.White.copy(alpha = 0.7f)
                         )
@@ -446,7 +447,7 @@ private fun HorizontalKnownForCard(
         if (item.character.isNotEmpty()) {
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "as ${item.character}",
+                text = tr("as ${item.character}"),
                 style = ArflixTypography.caption.copy(
                     fontSize = 11.sp,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic

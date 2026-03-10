@@ -125,6 +125,7 @@ import com.arflix.tv.ui.theme.BackgroundGradientCenter
 import com.arflix.tv.ui.theme.BackgroundGradientEnd
 import com.arflix.tv.ui.theme.BackgroundGradientStart
 import com.arflix.tv.util.isInCinema
+import com.arflix.tv.util.tr
 import com.arflix.tv.util.parseRatingValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.C
@@ -579,13 +580,13 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Unable to load content",
+                        text = tr("Unable to load content"),
                         style = ArflixTypography.sectionTitle,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = uiState.error ?: "Please check your connection",
+                        text = tr(uiState.error ?: "Please check your connection"),
                         style = ArflixTypography.body,
                         color = TextSecondary
                     )
@@ -593,7 +594,7 @@ fun HomeScreen(
                     androidx.tv.material3.Button(
                         onClick = { viewModel.refresh() }
                     ) {
-                        Text("Retry")
+                        Text(tr("Retry"))
                     }
                 }
             }
@@ -749,7 +750,7 @@ private fun HeroSection(
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "In Cinema",
+                            text = tr("In Cinema"),
                             style = ArflixTypography.caption.copy(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -780,7 +781,7 @@ private fun HeroSection(
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "LIVE",
+                                text = tr("LIVE"),
                                 style = ArflixTypography.caption.copy(
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Black
@@ -848,7 +849,7 @@ private fun HeroSection(
 
                     if (hasGenre) {
                         Text(
-                            text = genreText,
+                            text = tr(genreText),
                             style = ArflixTypography.caption.copy(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
@@ -902,7 +903,7 @@ private fun HeroSection(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "IMDb",
+                                text = tr("IMDb"),
                                 style = ArflixTypography.caption.copy(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Black
@@ -933,7 +934,7 @@ private fun HeroSection(
                         }
 
                         Text(
-                            text = "Budget $budgetText",
+                            text = tr("Budget $budgetText"),
                             style = ArflixTypography.caption.copy(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
@@ -949,7 +950,7 @@ private fun HeroSection(
 
                 // Overview text (EPG data for IPTV, synopsis for movies/shows)
                 Text(
-                    text = currentItem.overview,
+                    text = tr(currentItem.overview),
                     style = ArflixTypography.body.copy(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -1415,7 +1416,7 @@ private fun IncludedWithPrimeBadge() {
                 .background(Color.Transparent) // No circle bg in screenshot, just check
         )
         Text(
-            text = "Included with Prime",
+            text = tr("Included with Prime"),
             style = ArflixTypography.caption.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp
@@ -1464,7 +1465,7 @@ private fun ImdbBadge(rating: String) {
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = "IMDb",
+                text = tr("IMDb"),
                 style = ArflixTypography.caption.copy(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -1637,7 +1638,7 @@ private fun ContentRow(
     ) {
         // Section title - clean white text, aligned with cards
         Text(
-            text = category.title,
+            text = tr(category.title),
             style = ArflixTypography.sectionTitle.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
             color = Color.White,
             modifier = Modifier.padding(start = startPadding, bottom = 12.dp)  // Align with cards start padding

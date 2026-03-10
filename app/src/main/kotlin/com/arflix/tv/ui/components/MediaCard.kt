@@ -42,6 +42,7 @@ import com.arflix.tv.data.model.MediaType
 import com.arflix.tv.ui.skin.ArvioFocusableSurface
 import com.arflix.tv.ui.skin.ArvioSkin
 import com.arflix.tv.ui.skin.rememberArvioCardShape
+import com.arflix.tv.util.tr
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.zIndex
@@ -267,7 +268,7 @@ fun MediaCard(
             }
         }
         Text(
-            text = subtitle,
+            text = tr(subtitle),
             style = ArvioSkin.typography.caption,
             color = ArvioSkin.colors.textMuted.copy(alpha = 0.85f),
             maxLines = 1,

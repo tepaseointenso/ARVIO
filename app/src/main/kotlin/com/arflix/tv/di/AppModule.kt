@@ -10,6 +10,7 @@ import com.arflix.tv.data.api.StreamApi
 import com.arflix.tv.data.api.SupabaseApi
 import com.arflix.tv.data.api.TmdbApi
 import com.arflix.tv.data.api.TraktApi
+import com.arflix.tv.network.TmdbLanguageInterceptor
 import com.arflix.tv.network.OkHttpProvider
 import com.arflix.tv.util.Constants
 import dagger.Module
@@ -43,10 +44,16 @@ object AppModule {
     
     @Provides
     @Singleton
-    fun provideTmdbApi(okHttpClient: OkHttpClient): TmdbApi {
+    fun provideTmdbApi(
+        okHttpClient: OkHttpClient,
+        tmdbLanguageInterceptor: TmdbLanguageInterceptor
+    ): TmdbApi {
+        val tmdbClient = okHttpClient.newBuilder()
+            .addInterceptor(tmdbLanguageInterceptor)
+            .build()
         return Retrofit.Builder()
             .baseUrl(Constants.TMDB_BASE_URL)
-            .client(okHttpClient)
+            .client(tmdbClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(TmdbApi::class.java)

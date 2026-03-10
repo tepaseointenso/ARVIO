@@ -68,6 +68,7 @@ import com.arflix.tv.ui.theme.BackgroundDark
 import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 
 /**
  * Search screen with centered search bar and separate Movies/TV Shows rows
@@ -334,7 +335,7 @@ fun SearchScreen(
                             decorationBox = { innerTextField ->
                                 if (uiState.query.isEmpty()) {
                                     Text(
-                                        text = "Search movies and TV shows...",
+                                        text = tr("Search movies and TV shows..."),
                                         style = ArflixTypography.body,
                                         color = TextSecondary
                                     )
@@ -359,7 +360,7 @@ fun SearchScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No results found for \"${uiState.query}\"",
+                            text = tr("No results found for \"${uiState.query}\""),
                             style = ArflixTypography.body,
                             color = TextSecondary
                         )
@@ -368,7 +369,7 @@ fun SearchScreen(
                     // Movies Row
                     if (uiState.movieResults.isNotEmpty()) {
                         SearchResultRow(
-                            title = "Movies",
+                            title = tr("Movies"),
                             items = uiState.movieResults,
                             cardLogoUrls = uiState.cardLogoUrls,
                             usePosterCards = usePosterCards,
@@ -383,7 +384,7 @@ fun SearchScreen(
                     // TV Shows Row
                     if (uiState.tvResults.isNotEmpty()) {
                         SearchResultRow(
-                            title = "TV Shows",
+                            title = tr("TV Shows"),
                             items = uiState.tvResults,
                             cardLogoUrls = uiState.cardLogoUrls,
                             usePosterCards = usePosterCards,
@@ -479,8 +480,8 @@ private fun SearchResultRow(
                 itemsIndexed(items, key = { _, it -> it.id }) { index, item ->
                     // Create item with year in subtitle (e.g., "Movie | 2023")
                     val mediaTypeLabel = when (item.mediaType) {
-                        MediaType.TV -> "TV Show"
-                        MediaType.MOVIE -> "Movie"
+                        MediaType.TV -> tr("TV Show")
+                        MediaType.MOVIE -> tr("Movie")
                     }
                     val yearValue = item.year.ifBlank { item.releaseDate?.take(4).orEmpty() }
                     val yearDisplay = if (yearValue.isNotBlank()) " | $yearValue" else ""

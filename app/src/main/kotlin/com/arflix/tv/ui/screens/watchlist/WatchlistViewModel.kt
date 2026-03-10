@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.arflix.tv.data.model.MediaItem
 import com.arflix.tv.data.repository.CloudSyncRepository
 import com.arflix.tv.data.repository.WatchlistRepository
+import com.arflix.tv.util.LanguageSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,7 +30,8 @@ data class WatchlistUiState(
 @HiltViewModel
 class WatchlistViewModel @Inject constructor(
     private val watchlistRepository: WatchlistRepository,
-    private val cloudSyncRepository: CloudSyncRepository
+    private val cloudSyncRepository: CloudSyncRepository,
+    private val languageSettingsRepository: LanguageSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WatchlistUiState())
@@ -39,6 +42,18 @@ class WatchlistViewModel @Inject constructor(
         loadWatchlistInstant()
         // Also observe the repository's StateFlow for live updates
         observeWatchlistChanges()
+        observeMetadataLanguageChanges()
+    }
+
+    private fun observeMetadataLanguageChanges() {
+        viewModelScope.launch {
+            languageSettingsRepository.observeMetadataLanguage()
+                .drop(1)
+                .collect {
+                    watchlistRepository.clearWatchlistCache()
+                    loadWatchlistInstant()
+                }
+        }
     }
 
     private fun observeWatchlistChanges() {
@@ -134,5 +149,4 @@ class WatchlistViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(toastMessage = null)
     }
 }
-
 

@@ -52,6 +52,7 @@ data class PlayerUiState(
     val selectedSubtitle: Subtitle? = null,
     val subtitleSelectionNonce: Int = 0,
     val savedPosition: Long = 0,
+    val preferredSubtitleLanguage: String = "Off",
     val preferredAudioLanguage: String = "en",
     val frameRateMatchingMode: String = "Off",
     val error: String? = null,
@@ -160,11 +161,13 @@ class PlayerViewModel @Inject constructor(
         currentItemTitle = cachedItem?.title ?: ""
 
         viewModelScope.launch {
+            val preferredSubtitleLanguage = getDefaultSubtitle()
             val preferredAudioLanguage = resolvePreferredAudioLanguage()
             val frameRateMatchingMode = resolveFrameRateMatchingMode()
             _uiState.value = PlayerUiState(
                 isLoading = true,
                 isLoadingStreams = true,
+                preferredSubtitleLanguage = preferredSubtitleLanguage,
                 preferredAudioLanguage = preferredAudioLanguage,
                 frameRateMatchingMode = frameRateMatchingMode
             )
@@ -1729,4 +1732,3 @@ class PlayerViewModel @Inject constructor(
         )
     }
 }
-

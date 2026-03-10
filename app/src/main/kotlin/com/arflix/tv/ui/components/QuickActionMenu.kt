@@ -45,6 +45,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
 import com.arflix.tv.ui.skin.ArvioSkin
+import com.arflix.tv.util.tr
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -179,7 +180,7 @@ private fun QuickActionTile(
         )
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = label,
+            text = tr(label),
             style = ArvioSkin.typography.caption,
             color = ArvioSkin.colors.textPrimary.copy(alpha = contentAlpha)
         )

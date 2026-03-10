@@ -24,6 +24,7 @@ import com.arflix.tv.data.model.PersonDetails
 import com.arflix.tv.data.model.Review
 import com.arflix.tv.util.CatalogUrlParser
 import com.arflix.tv.util.Constants
+import com.arflix.tv.util.LanguageSettingsRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
@@ -63,7 +64,8 @@ class MediaRepository @Inject constructor(
     private val traktRepository: TraktRepository,
     private val traktApi: TraktApi,
     private val okHttpClient: OkHttpClient,
-    private val streamRepository: StreamRepository
+    private val streamRepository: StreamRepository,
+    private val languageSettingsRepository: LanguageSettingsRepository
 ) {
     data class CategoryPageResult(
         val items: List<MediaItem>,
@@ -91,6 +93,10 @@ class MediaRepository @Inject constructor(
     private fun <T> getFromCache(cache: Map<String, CacheEntry<T>>, key: String): T? {
         val entry = cache[key] ?: return null
         return if (System.currentTimeMillis() - entry.timestamp < CACHE_TTL_MS) entry.data else null
+    }
+
+    private fun languageAwareKey(base: String): String {
+        return "${languageSettingsRepository.currentMetadataLanguageTag()}:$base"
     }
 
     private fun getAddonImdbLookupEntry(imdbId: String): CacheEntry<Pair<MediaType, Int>?>? {
@@ -126,28 +132,38 @@ class MediaRepository @Inject constructor(
     }
 
     fun getCachedItem(mediaType: MediaType, mediaId: Int): MediaItem? {
-        val cacheKey = if (mediaType == MediaType.MOVIE) "movie_$mediaId" else "tv_$mediaId"
+        val cacheKey = languageAwareKey(if (mediaType == MediaType.MOVIE) "movie_$mediaId" else "tv_$mediaId")
         return getFromCache(detailsCache, cacheKey)
     }
 
     fun cacheImdbId(mediaType: MediaType, mediaId: Int, imdbId: String) {
         if (imdbId.isBlank()) return
-        val cacheKey = if (mediaType == MediaType.MOVIE) "movie_$mediaId" else "tv_$mediaId"
+        val cacheKey = languageAwareKey(if (mediaType == MediaType.MOVIE) "movie_$mediaId" else "tv_$mediaId")
         imdbIdCache[cacheKey] = imdbId
     }
 
     fun getCachedImdbId(mediaType: MediaType, mediaId: Int): String? {
-        val cacheKey = if (mediaType == MediaType.MOVIE) "movie_$mediaId" else "tv_$mediaId"
+        val cacheKey = languageAwareKey(if (mediaType == MediaType.MOVIE) "movie_$mediaId" else "tv_$mediaId")
         return imdbIdCache[cacheKey]
     }
 
     fun cacheItem(item: MediaItem) {
-        val cacheKey = if (item.mediaType == MediaType.MOVIE) "movie_${item.id}" else "tv_${item.id}"
+        val cacheKey = languageAwareKey(if (item.mediaType == MediaType.MOVIE) "movie_${item.id}" else "tv_${item.id}")
         detailsCache[cacheKey] = CacheEntry(item, System.currentTimeMillis())
     }
 
     private fun cacheItems(items: List<MediaItem>) {
         items.forEach { cacheItem(it) }
+    }
+
+    fun clearLanguageSensitiveCaches() {
+        detailsCache.clear()
+        castCache.clear()
+        similarCache.clear()
+        logoCache.clear()
+        reviewsCache.clear()
+        seasonEpisodesCache.clear()
+        imdbIdCache.clear()
     }
 
     fun getDefaultCatalogConfigs(): List<CatalogConfig> {
@@ -969,7 +985,7 @@ class MediaRepository @Inject constructor(
      * Get movie details (cached)
      */
     suspend fun getMovieDetails(movieId: Int): MediaItem {
-        val cacheKey = "movie_$movieId"
+        val cacheKey = languageAwareKey("movie_$movieId")
         getFromCache(detailsCache, cacheKey)?.let { cached ->
             // Only use cache hit if it was populated from the full TMDB details API.
             // Home screen items share the same cache key but lack detail-level fields.
@@ -986,7 +1002,7 @@ class MediaRepository @Inject constructor(
      * Get TV show details (cached)
      */
     suspend fun getTvDetails(tvId: Int): MediaItem {
-        val cacheKey = "tv_$tvId"
+        val cacheKey = languageAwareKey("tv_$tvId")
         getFromCache(detailsCache, cacheKey)?.let { cached ->
             // Only use cache hit if it was populated from the full TMDB details API.
             // Home screen items (from trending/discover lists) share the same cache key
@@ -1006,7 +1022,7 @@ class MediaRepository @Inject constructor(
      * Get season episodes with Trakt watched status
      */
     suspend fun getSeasonEpisodes(tvId: Int, seasonNumber: Int): List<Episode> {
-        val cacheKey = "tv_${tvId}_season_$seasonNumber"
+        val cacheKey = languageAwareKey("tv_${tvId}_season_$seasonNumber")
         val cachedEpisodes = getFromCache(seasonEpisodesCache, cacheKey)
 
         // First ensure the global watched cache is initialized.
@@ -1050,7 +1066,7 @@ class MediaRepository @Inject constructor(
      * Get cast members (cached)
      */
     suspend fun getCast(mediaType: MediaType, mediaId: Int): List<CastMember> {
-        val cacheKey = "${mediaType}_cast_$mediaId"
+        val cacheKey = languageAwareKey("${mediaType}_cast_$mediaId")
         getFromCache(castCache, cacheKey)?.let { return it }
 
         val type = if (mediaType == MediaType.TV) "tv" else "movie"
@@ -1068,7 +1084,7 @@ class MediaRepository @Inject constructor(
      * Falls back to similar if recommendations are empty
      */
     suspend fun getSimilar(mediaType: MediaType, mediaId: Int): List<MediaItem> {
-        val cacheKey = "${mediaType}_similar_$mediaId"
+        val cacheKey = languageAwareKey("${mediaType}_similar_$mediaId")
         getFromCache(similarCache, cacheKey)?.let { return it }
 
         val type = if (mediaType == MediaType.TV) "tv" else "movie"
@@ -1099,7 +1115,7 @@ class MediaRepository @Inject constructor(
      * Get logo URL for a media item (cached)
      */
     suspend fun getLogoUrl(mediaType: MediaType, mediaId: Int): String? {
-        val cacheKey = "${mediaType}_logo_$mediaId"
+        val cacheKey = languageAwareKey("${mediaType}_logo_$mediaId")
         if (logoCache.containsKey(cacheKey)) {
             getFromCache(logoCache, cacheKey)?.let { return it }
         }
@@ -1161,7 +1177,7 @@ class MediaRepository @Inject constructor(
      * Get reviews for a movie or TV show from TMDB (cached)
      */
     suspend fun getReviews(mediaType: MediaType, mediaId: Int): List<Review> {
-        val cacheKey = "${mediaType}_reviews_$mediaId"
+        val cacheKey = languageAwareKey("${mediaType}_reviews_$mediaId")
         getFromCache(reviewsCache, cacheKey)?.let { return it }
 
         val type = if (mediaType == MediaType.TV) "tv" else "movie"

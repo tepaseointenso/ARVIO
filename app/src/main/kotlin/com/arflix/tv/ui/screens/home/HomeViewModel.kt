@@ -24,6 +24,7 @@ import com.arflix.tv.data.repository.SyncStatus
 import com.arflix.tv.data.repository.WatchHistoryRepository
 import com.arflix.tv.data.repository.WatchlistRepository
 import com.arflix.tv.util.Constants
+import com.arflix.tv.util.LanguageSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -88,6 +89,7 @@ class HomeViewModel @Inject constructor(
     private val watchHistoryRepository: WatchHistoryRepository,
     private val watchlistRepository: WatchlistRepository,
     private val cloudSyncRepository: CloudSyncRepository,
+    private val languageSettingsRepository: LanguageSettingsRepository,
     private val imageLoader: ImageLoader,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -660,6 +662,21 @@ class HomeViewModel @Inject constructor(
                 .drop(1) // Skip first emission (startup) to avoid cancelling the initial loadHomeData
                 .collect {
                     // Apply catalog reorder/add/remove immediately on Home.
+                    loadHomeData()
+                }
+        }
+        observeMetadataLanguageChanges()
+    }
+
+    private fun observeMetadataLanguageChanges() {
+        viewModelScope.launch {
+            languageSettingsRepository.observeMetadataLanguage()
+                .drop(1)
+                .collect {
+                    mediaRepository.clearLanguageSensitiveCaches()
+                    watchlistRepository.clearWatchlistCache()
+                    traktRepository.clearContinueWatchingCache()
+                    traktRepository.invalidateWatchedCache()
                     loadHomeData()
                 }
         }
@@ -2258,4 +2275,3 @@ class HomeViewModel @Inject constructor(
         }
     }
 }
-

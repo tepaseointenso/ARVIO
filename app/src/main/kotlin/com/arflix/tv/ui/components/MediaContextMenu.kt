@@ -54,6 +54,7 @@ import com.arflix.tv.ui.theme.BackgroundCard
 import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 
 /**
  * Context menu for media cards on home screen
@@ -162,7 +163,7 @@ fun MediaContextMenu(
             ) {
                 // Title
                 Text(
-                    text = title,
+                    text = tr(title),
                     style = ArflixTypography.sectionTitle,
                     color = TextPrimary,
                     maxLines = 2
@@ -192,7 +193,7 @@ fun MediaContextMenu(
 
                 // Hint
                 Text(
-                    text = "Press BACK to close",
+                    text = tr("Press BACK to close"),
                     style = ArflixTypography.caption,
                     color = TextSecondary.copy(alpha = 0.5f)
                 )
@@ -234,7 +235,7 @@ private fun ContextMenuItem(
                 modifier = Modifier.size(22.dp)
             )
             Text(
-                text = label,
+                text = tr(label),
                 style = ArflixTypography.body,
                 color = if (isFocused) Color.White else TextPrimary
             )

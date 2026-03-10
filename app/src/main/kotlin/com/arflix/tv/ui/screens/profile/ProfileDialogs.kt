@@ -52,6 +52,7 @@ import com.arflix.tv.data.model.Profile
 import com.arflix.tv.data.model.ProfileColors
 import com.arflix.tv.ui.components.AvatarIcon
 import com.arflix.tv.ui.components.AvatarRegistry
+import com.arflix.tv.util.tr
 
 // ============================================================
 // Add Profile Dialog
@@ -164,7 +165,7 @@ private fun ProfileDialogContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = title,
+                        text = tr(title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
@@ -283,7 +284,7 @@ private fun ProfileDialogContent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         DialogButton(
-                            text = confirmLabel,
+                            text = tr(confirmLabel),
                             isPrimary = true,
                             enabled = name.isNotBlank(),
                             onClick = onConfirm,
@@ -292,9 +293,9 @@ private fun ProfileDialogContent(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            DialogButton(text = "Cancel", isPrimary = false, onClick = onDismiss)
+                            DialogButton(text = tr("Cancel"), isPrimary = false, onClick = onDismiss)
                             if (onDelete != null) {
-                                DialogButton(text = "Delete", isPrimary = false, isDestructive = true, onClick = onDelete)
+                                DialogButton(text = tr("Delete"), isPrimary = false, isDestructive = true, onClick = onDelete)
                             }
                         }
                     }

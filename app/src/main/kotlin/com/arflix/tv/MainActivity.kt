@@ -75,6 +75,7 @@ import com.arflix.tv.ui.theme.BackgroundGradientCenter
 import com.arflix.tv.ui.theme.BackgroundGradientEnd
 import com.arflix.tv.ui.theme.BackgroundGradientStart
 import com.arflix.tv.worker.TraktSyncWorker
+import com.arflix.tv.util.ProvideAppLocalization
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.Lazy
 import kotlinx.coroutines.launch
@@ -124,18 +125,20 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ArflixTvTheme {
-                val startupState by startupViewModel.state.collectAsState()
-                // Open UI immediately; startup preload continues in background.
-                ArflixApp(
-                    authRepository = authRepository.get(),
-                    profileRepository = profileRepository.get(),
-                    traktRepository = traktRepository.get(),
-                    preloadedCategories = startupState.categories,
-                    preloadedHeroItem = startupState.heroItem,
-                    preloadedHeroLogoUrl = startupState.heroLogoUrl,
-                    preloadedLogoCache = startupState.logoCache,
-                    onExitApp = { finish() }
-                )
+                ProvideAppLocalization {
+                    val startupState by startupViewModel.state.collectAsState()
+                    // Open UI immediately; startup preload continues in background.
+                    ArflixApp(
+                        authRepository = authRepository.get(),
+                        profileRepository = profileRepository.get(),
+                        traktRepository = traktRepository.get(),
+                        preloadedCategories = startupState.categories,
+                        preloadedHeroItem = startupState.heroItem,
+                        preloadedHeroLogoUrl = startupState.heroLogoUrl,
+                        preloadedLogoCache = startupState.logoCache,
+                        onExitApp = { finish() }
+                    )
+                }
             }
         }
 
@@ -355,4 +358,3 @@ private fun enqueueFullTraktSync(context: android.content.Context) {
         request
     )
 }
-

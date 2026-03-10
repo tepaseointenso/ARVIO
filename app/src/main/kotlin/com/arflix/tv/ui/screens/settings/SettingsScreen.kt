@@ -77,6 +77,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.widget.doAfterTextChanged
@@ -94,6 +95,13 @@ import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.SuccessGreen
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.InterfaceLanguage
+import com.arflix.tv.util.LocalInterfaceLanguage
+import com.arflix.tv.util.MetadataLanguage
+import com.arflix.tv.util.interfaceLanguageLabel
+import com.arflix.tv.util.localizeText
+import com.arflix.tv.util.metadataLanguageLabel
+import com.arflix.tv.util.tr
 import kotlin.math.abs
 
 /**
@@ -112,6 +120,7 @@ fun SettingsScreen(
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val interfaceLanguage = LocalInterfaceLanguage.current
 
     var isSidebarFocused by remember { mutableStateOf(false) }
     val hasProfile = currentProfile != null
@@ -145,8 +154,12 @@ fun SettingsScreen(
     var subtitlePickerIndex by remember { mutableIntStateOf(0) }
     var showAudioLanguagePicker by remember { mutableStateOf(false) }
     var audioLanguagePickerIndex by remember { mutableIntStateOf(0) }
+    var showAppLanguagePicker by remember { mutableStateOf(false) }
+    var appLanguagePickerIndex by remember { mutableIntStateOf(0) }
+    var showMetadataLanguagePicker by remember { mutableStateOf(false) }
+    var metadataLanguagePickerIndex by remember { mutableIntStateOf(0) }
 
-    val sections = remember { listOf("general", "iptv", "catalogs", "addons", "accounts") }
+    val sections = remember { listOf("general", "metadata", "iptv", "catalogs", "addons", "accounts") }
 
     val focusRequester = remember { FocusRequester() }
     val scrollState = rememberScrollState()
@@ -163,6 +176,12 @@ fun SettingsScreen(
         audioLanguagePickerIndex = options.indexOfFirst { it.equals(uiState.defaultAudioLanguage, ignoreCase = true) }
             .coerceAtLeast(0)
         showAudioLanguagePicker = true
+    }
+    val interfaceLanguageOptions = remember(interfaceLanguage) {
+        InterfaceLanguage.entries.map { interfaceLanguageLabel(it, interfaceLanguage) }
+    }
+    val metadataLanguageOptions = remember(interfaceLanguage) {
+        MetadataLanguage.entries.map { metadataLanguageLabel(it, interfaceLanguage) }
     }
 
     LaunchedEffect(Unit) {
@@ -201,11 +220,12 @@ fun SettingsScreen(
         if (scrollState.maxValue <= 0) return@LaunchedEffect
 
         val maxIndex = when (sectionIndex) {
-            0 -> 6 // General: 7 items
-            1 -> 2 // IPTV
-            2 -> uiState.catalogs.size // Catalogs
-            3 -> uiState.addons.size // Addons
-            4 -> 2 // Accounts
+            0 -> 7 // General
+            1 -> 0 // Metadata
+            2 -> 2 // IPTV
+            3 -> uiState.catalogs.size // Catalogs
+            4 -> uiState.addons.size // Addons
+            5 -> 2 // Accounts
             else -> 0
         }.coerceAtLeast(1)
 
@@ -251,7 +271,12 @@ fun SettingsScreen(
             .focusable()
             .onPreviewKeyEvent { event ->
                     // BLOCKER FIX: Ignore main screen navigation if modals are open
-                    if (showCustomAddonInput || showSubtitlePicker || showAudioLanguagePicker || showIptvInput || showCatalogInput || uiState.showCloudPairDialog || uiState.showCloudEmailPasswordDialog) return@onPreviewKeyEvent false
+                    if (
+                        showCustomAddonInput || showSubtitlePicker || showAudioLanguagePicker ||
+                        showAppLanguagePicker || showMetadataLanguagePicker ||
+                        showIptvInput || showCatalogInput ||
+                        uiState.showCloudPairDialog || uiState.showCloudEmailPasswordDialog
+                    ) return@onPreviewKeyEvent false
 
                 if (event.type == KeyEventType.KeyDown) {
                     val currentSection = sections.getOrNull(sectionIndex).orEmpty()
@@ -358,11 +383,12 @@ fun SettingsScreen(
                                 Zone.CONTENT -> {
                                     // Dynamic max based on current section
                                     val maxIndex = when (sectionIndex) {
-                                        0 -> 6 // General: 7 items
-                                        1 -> 2 // IPTV: Configure + Refresh + Delete
-                                        2 -> uiState.catalogs.size // Catalogs: Add + N catalogs
-                                        3 -> uiState.addons.size // Addons: N addons + "Add Custom" button
-                                        4 -> 2 // Accounts: Cloud + Trakt + Switch Profile
+                                        0 -> 7 // General
+                                        1 -> 0 // Metadata
+                                        2 -> 2 // IPTV
+                                        3 -> uiState.catalogs.size // Catalogs
+                                        4 -> uiState.addons.size // Addons
+                                        5 -> 2 // Accounts
                                         else -> 0
                                     }
                                     if (contentFocusIndex < maxIndex) {
@@ -398,16 +424,24 @@ fun SettingsScreen(
                                     when (sectionIndex) {
                                         0 -> { // General
                                             when (contentFocusIndex) {
-                                                0 -> openSubtitlePicker()
-                                                1 -> openAudioLanguagePicker()
-                                                2 -> viewModel.toggleCardLayoutMode()
-                                                3 -> viewModel.cycleFrameRateMatchingMode()
-                                                4 -> viewModel.setAutoPlayNext(!uiState.autoPlayNext)
-                                                5 -> viewModel.setAutoPlaySingleSource(!uiState.autoPlaySingleSource)
-                                                6 -> viewModel.cycleAutoPlayMinQuality()
+                                                0 -> {
+                                                    appLanguagePickerIndex = InterfaceLanguage.entries.indexOf(uiState.interfaceLanguage).coerceAtLeast(0)
+                                                    showAppLanguagePicker = true
+                                                }
+                                                1 -> openSubtitlePicker()
+                                                2 -> openAudioLanguagePicker()
+                                                3 -> viewModel.toggleCardLayoutMode()
+                                                4 -> viewModel.cycleFrameRateMatchingMode()
+                                                5 -> viewModel.setAutoPlayNext(!uiState.autoPlayNext)
+                                                6 -> viewModel.setAutoPlaySingleSource(!uiState.autoPlaySingleSource)
+                                                7 -> viewModel.cycleAutoPlayMinQuality()
                                             }
                                         }
-                                        1 -> { // IPTV
+                                        1 -> { // Metadata
+                                            metadataLanguagePickerIndex = MetadataLanguage.entries.indexOf(uiState.metadataLanguage).coerceAtLeast(0)
+                                            showMetadataLanguagePicker = true
+                                        }
+                                        2 -> { // IPTV
                                             when (contentFocusIndex) {
                                                 0 -> {
                                                     showIptvInput = true
@@ -420,7 +454,7 @@ fun SettingsScreen(
                                                 }
                                             }
                                         }
-                                        2 -> { // Catalogs
+                                        3 -> { // Catalogs
                                             if (contentFocusIndex == 0) {
                                                 showCatalogInput = true
                                             } else {
@@ -439,7 +473,7 @@ fun SettingsScreen(
                                                 }
                                             }
                                         }
-                                        3 -> { // Addons
+                                        4 -> { // Addons
                                             when {
                                                 contentFocusIndex in 0 until uiState.addons.size -> {
                                                     val addon = uiState.addons[contentFocusIndex]
@@ -463,7 +497,7 @@ fun SettingsScreen(
                                                 }
                                             }
                                         }
-                                        4 -> { // Accounts
+                                        5 -> { // Accounts
                                             when (contentFocusIndex) {
                                                 0 -> { // Cloud account
                                                     if (uiState.isLoggedIn) {
@@ -516,7 +550,7 @@ fun SettingsScreen(
                     .padding(vertical = 80.dp, horizontal = 24.dp)
             ) {
                 Text(
-                    text = "Settings",
+                    text = tr("Settings"),
                     style = ArflixTypography.heroTitle.copy(fontSize = androidx.compose.ui.unit.TextUnit.Unspecified),
                     color = TextPrimary,
                     modifier = Modifier
@@ -528,13 +562,22 @@ fun SettingsScreen(
                     SettingsSectionItem(
                         icon = when (section) {
                             "general" -> Icons.Default.Settings
+                            "metadata" -> Icons.Default.Movie
                             "iptv" -> Icons.Default.LiveTv
                             "catalogs" -> Icons.Default.Widgets
                             "addons" -> Icons.Default.Widgets
                             "accounts" -> Icons.Default.Person
                             else -> Icons.Default.Settings
                         },
-                        title = section.replaceFirstChar { it.uppercase() },
+                        title = when (section) {
+                            "general" -> "General"
+                            "metadata" -> "Metadata"
+                            "iptv" -> "IPTV"
+                            "catalogs" -> "Catalogs"
+                            "addons" -> "Addons"
+                            "accounts" -> "Accounts"
+                            else -> section
+                        },
                         isSelected = sectionIndex == index,
                         isFocused = activeZone == Zone.SECTION && sectionIndex == index
                     )
@@ -562,6 +605,7 @@ fun SettingsScreen(
             ) {
                 when (sections[sectionIndex]) {
                     "general" -> GeneralSettings(
+                        interfaceLanguage = interfaceLanguageLabel(uiState.interfaceLanguage, interfaceLanguage),
                         defaultSubtitle = uiState.defaultSubtitle,
                         defaultAudioLanguage = uiState.defaultAudioLanguage,
                         cardLayoutMode = uiState.cardLayoutMode,
@@ -577,6 +621,10 @@ fun SettingsScreen(
                         onAutoPlayToggle = { viewModel.setAutoPlayNext(it) },
                         onAutoPlaySingleSourceToggle = { viewModel.setAutoPlaySingleSource(it) },
                         onAutoPlayMinQualityClick = { viewModel.cycleAutoPlayMinQuality() }
+                    )
+                    "metadata" -> MetadataSettings(
+                        metadataLanguage = metadataLanguageLabel(uiState.metadataLanguage, interfaceLanguage),
+                        focusedIndex = if (activeZone == Zone.CONTENT) contentFocusIndex else -1
                     )
                     "iptv" -> IptvSettings(
                         m3uUrl = uiState.iptvM3uUrl,
@@ -757,6 +805,42 @@ fun SettingsScreen(
             )
         }
 
+        if (showAppLanguagePicker) {
+            SubtitlePickerModal(
+                title = "App Language",
+                options = interfaceLanguageOptions,
+                selected = interfaceLanguageLabel(uiState.interfaceLanguage, interfaceLanguage),
+                focusedIndex = appLanguagePickerIndex,
+                onFocusChange = { appLanguagePickerIndex = it },
+                onSelect = {
+                    val selectedLanguage = InterfaceLanguage.entries.getOrNull(appLanguagePickerIndex)
+                    if (selectedLanguage != null) {
+                        viewModel.setInterfaceLanguage(selectedLanguage)
+                    }
+                    showAppLanguagePicker = false
+                },
+                onDismiss = { showAppLanguagePicker = false }
+            )
+        }
+
+        if (showMetadataLanguagePicker) {
+            SubtitlePickerModal(
+                title = "Metadata Language",
+                options = metadataLanguageOptions,
+                selected = metadataLanguageLabel(uiState.metadataLanguage, interfaceLanguage),
+                focusedIndex = metadataLanguagePickerIndex,
+                onFocusChange = { metadataLanguagePickerIndex = it },
+                onSelect = {
+                    val selectedLanguage = MetadataLanguage.entries.getOrNull(metadataLanguagePickerIndex)
+                    if (selectedLanguage != null) {
+                        viewModel.setMetadataLanguage(selectedLanguage)
+                    }
+                    showMetadataLanguagePicker = false
+                },
+                onDismiss = { showMetadataLanguagePicker = false }
+            )
+        }
+
         if (uiState.showCloudEmailPasswordDialog) {
             CloudEmailPasswordModal(
                 email = cloudDialogEmail,
@@ -886,7 +970,7 @@ private fun CloudEmailPasswordModal(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "ARVIO Cloud Sign-in",
+                text = tr("ARVIO Cloud Sign-in"),
                 style = ArflixTypography.sectionTitle,
                 color = TextPrimary,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -894,7 +978,7 @@ private fun CloudEmailPasswordModal(
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Email",
+                    text = tr("Email"),
                     style = ArflixTypography.caption,
                     color = if (focusedIndex == 0) Pink else TextSecondary,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -928,7 +1012,7 @@ private fun CloudEmailPasswordModal(
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Password",
+                    text = tr("Password"),
                     style = ArflixTypography.caption,
                     color = if (focusedIndex == 1) Pink else TextSecondary,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -982,7 +1066,7 @@ private fun CloudEmailPasswordModal(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = tr("Cancel"),
                         style = ArflixTypography.button,
                         color = if (isCancelFocused) TextPrimary else TextSecondary
                     )
@@ -1005,7 +1089,7 @@ private fun CloudEmailPasswordModal(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Sign In",
+                        text = tr("Sign In"),
                         style = ArflixTypography.button,
                         color = Color.White
                     )
@@ -1028,7 +1112,7 @@ private fun CloudEmailPasswordModal(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Create",
+                        text = tr("Create"),
                         style = ArflixTypography.button,
                         color = Color.White
                     )
@@ -1037,7 +1121,7 @@ private fun CloudEmailPasswordModal(
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Tip: Use TV keyboard. D-pad to navigate.",
+                text = tr("Tip: Use TV keyboard. D-pad to navigate."),
                 style = ArflixTypography.caption,
                 color = TextSecondary.copy(alpha = 0.5f)
             )
@@ -1105,14 +1189,14 @@ private fun CloudPairModal(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "ARVIO Cloud Pairing",
+                    text = tr("ARVIO Cloud Pairing"),
                     style = ArflixTypography.sectionTitle,
                     color = TextPrimary,
                     modifier = Modifier.padding(bottom = 10.dp)
                 )
 
                 Text(
-                    text = "Scan this QR code to sign in and link this TV.",
+                    text = tr("Scan this QR code to sign in and link this TV."),
                     style = ArflixTypography.body,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
@@ -1152,7 +1236,7 @@ private fun CloudPairModal(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Code: $userCode",
+                            text = tr("Code: $userCode"),
                             style = ArflixTypography.body,
                             color = TextPrimary
                         )
@@ -1165,7 +1249,7 @@ private fun CloudPairModal(
                         LoadingIndicator(size = 20.dp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Waiting for approval...",
+                            text = tr("Waiting for approval..."),
                             style = ArflixTypography.body,
                             color = TextSecondary
                         )
@@ -1202,7 +1286,7 @@ private fun CloudPairModal(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Cancel",
+                                text = tr("Cancel"),
                                 style = ArflixTypography.button,
                                 color = if (isCancelFocused) TextPrimary else TextSecondary
                             )
@@ -1233,7 +1317,7 @@ private fun CloudPairModal(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Use Email/Password",
+                                text = tr("Use Email/Password"),
                                 style = ArflixTypography.button,
                                 color = Color.White
                             )
@@ -1283,7 +1367,7 @@ private fun SettingsSectionItem(
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
-            text = title,
+            text = tr(title),
             style = ArflixTypography.body,
             color = textColor
         )
@@ -1293,6 +1377,7 @@ private fun SettingsSectionItem(
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 private fun GeneralSettings(
+    interfaceLanguage: String,
     defaultSubtitle: String,
     defaultAudioLanguage: String,
     cardLayoutMode: String,
@@ -1311,11 +1396,22 @@ private fun GeneralSettings(
 ) {
     Column {
         Text(
-            text = "Player Preferences",
+            text = tr("Player Preferences"),
             style = ArflixTypography.sectionTitle,
             color = TextPrimary,
             modifier = Modifier.padding(bottom = 24.dp)
         )
+
+        SettingsRow(
+            icon = Icons.Default.Settings,
+            title = "App Language",
+            subtitle = "Language used across the interface",
+            value = interfaceLanguage,
+            isFocused = focusedIndex == 0,
+            onClick = {}
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
         
         // Default Subtitle
         SettingsRow(
@@ -1323,7 +1419,7 @@ private fun GeneralSettings(
             title = "Default Subtitle",
             subtitle = "Preferred language for auto-selection",
             value = defaultSubtitle,
-            isFocused = focusedIndex == 0,
+            isFocused = focusedIndex == 1,
             onClick = onSubtitleClick
         )
         
@@ -1335,7 +1431,7 @@ private fun GeneralSettings(
             title = "Default Audio",
             subtitle = "Preferred audio track language",
             value = defaultAudioLanguage,
-            isFocused = focusedIndex == 1,
+            isFocused = focusedIndex == 2,
             onClick = onAudioLanguageClick
         )
 
@@ -1347,7 +1443,7 @@ private fun GeneralSettings(
             title = "Card Layout",
             subtitle = "Switch between landscape and poster cards",
             value = cardLayoutMode,
-            isFocused = focusedIndex == 2,
+            isFocused = focusedIndex == 3,
             onClick = onCardLayoutToggle
         )
 
@@ -1359,7 +1455,7 @@ private fun GeneralSettings(
             title = "Match Frame Rate",
             subtitle = "Off, Seamless only, or Always (may blank-screen on some TVs)",
             value = frameRateMatchingMode,
-            isFocused = focusedIndex == 3,
+            isFocused = focusedIndex == 4,
             onClick = onFrameRateMatchingClick
         )
 
@@ -1370,7 +1466,7 @@ private fun GeneralSettings(
             title = "Auto-Play Next",
             subtitle = "Start next episode automatically",
             isEnabled = autoPlayNext,
-            isFocused = focusedIndex == 4,
+            isFocused = focusedIndex == 5,
             onToggle = onAutoPlayToggle
         )
 
@@ -1380,7 +1476,7 @@ private fun GeneralSettings(
             title = "Auto-Play Single Source",
             subtitle = "Skip source picker when only one valid source exists",
             isEnabled = autoPlaySingleSource,
-            isFocused = focusedIndex == 5,
+            isFocused = focusedIndex == 6,
             onToggle = onAutoPlaySingleSourceToggle
         )
 
@@ -1391,8 +1487,33 @@ private fun GeneralSettings(
             title = "Auto-Play Min Quality",
             subtitle = "Minimum quality required for single-source auto-play",
             value = autoPlayMinQuality,
-            isFocused = focusedIndex == 6,
+            isFocused = focusedIndex == 7,
             onClick = onAutoPlayMinQualityClick
+        )
+    }
+}
+
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+private fun MetadataSettings(
+    metadataLanguage: String,
+    focusedIndex: Int
+) {
+    Column {
+        Text(
+            text = tr("Content & Metadata"),
+            style = ArflixTypography.sectionTitle,
+            color = TextPrimary,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        SettingsRow(
+            icon = Icons.Default.Movie,
+            title = "Metadata Language",
+            subtitle = "Language used for movies, series and episode information",
+            value = metadataLanguage,
+            isFocused = focusedIndex == 0,
+            onClick = {}
         )
     }
 }
@@ -1523,6 +1644,7 @@ private fun SettingsRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 86.dp)
             .background(
                 if (isFocused) Color.White.copy(alpha = 0.1f) else BackgroundElevated,
                 RoundedCornerShape(12.dp)
@@ -1532,11 +1654,15 @@ private fun SettingsRow(
                 color = if (isFocused) Pink else Color.Transparent,
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(20.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
@@ -1546,23 +1672,43 @@ private fun SettingsRow(
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
-                    text = title,
+                    text = tr(title),
                     style = ArflixTypography.cardTitle,
-                    color = TextPrimary
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = subtitle,
+                    text = tr(subtitle),
                     style = ArflixTypography.caption,
-                    color = TextSecondary
+                    color = TextSecondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
-        
-        Text(
-            text = value.uppercase(),
-            style = ArflixTypography.label,
-            color = Pink
-        )
+
+        Box(
+            modifier = Modifier
+                .background(
+                    color = if (isFocused) Pink.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f),
+                    shape = RoundedCornerShape(999.dp)
+                )
+                .border(
+                    width = 1.dp,
+                    color = if (isFocused) Pink.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(999.dp)
+                )
+                .padding(horizontal = 12.dp, vertical = 7.dp)
+        ) {
+            Text(
+                text = tr(value).uppercase(),
+                style = ArflixTypography.label,
+                color = if (isFocused) Color.White else Pink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -1578,6 +1724,7 @@ private fun SettingsToggleRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 86.dp)
             .background(
                 if (isFocused) Color.White.copy(alpha = 0.1f) else BackgroundElevated,
                 RoundedCornerShape(12.dp)
@@ -1587,20 +1734,27 @@ private fun SettingsToggleRow(
                 color = if (isFocused) Pink else Color.Transparent,
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(20.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 12.dp)
+        ) {
             Text(
-                text = title,
+                text = tr(title),
                 style = ArflixTypography.cardTitle,
-                color = TextPrimary
+                color = TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = subtitle,
+                text = tr(subtitle),
                 style = ArflixTypography.caption,
-                color = TextSecondary
+                color = TextSecondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
         
@@ -1637,13 +1791,13 @@ private fun CatalogsSettings(
 ) {
     Column {
         Text(
-            text = "Catalogs",
+            text = tr("Catalogs"),
             style = ArflixTypography.sectionTitle,
             color = TextPrimary,
             modifier = Modifier.padding(bottom = 12.dp)
         )
         Text(
-            text = "Trakt/MDBList URLs can be added manually. Addon catalogs appear automatically.",
+            text = tr("Trakt/MDBList URLs can be added manually. Addon catalogs appear automatically."),
             style = ArflixTypography.caption,
             color = TextSecondary.copy(alpha = 0.65f),
             modifier = Modifier.padding(bottom = 20.dp)
@@ -1685,13 +1839,13 @@ private fun CatalogsSettings(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = title,
+                        text = tr(title),
                         style = ArflixTypography.body,
                         color = if (isRowFocused) TextPrimary else TextSecondary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = subtitle,
+                        text = tr(subtitle),
                         style = ArflixTypography.caption,
                         color = TextSecondary.copy(alpha = 0.7f)
                     )
@@ -1776,7 +1930,7 @@ private fun AddonsSettings(
 ) {
     Column {
         Text(
-            text = "Manage Addons",
+            text = tr("Manage Addons"),
             style = ArflixTypography.sectionTitle,
             color = TextPrimary,
             modifier = Modifier.padding(bottom = 24.dp)
@@ -1784,7 +1938,7 @@ private fun AddonsSettings(
 
         if (addons.isEmpty()) {
             Text(
-                text = "No addons installed",
+                text = tr("No addons installed"),
                 style = ArflixTypography.body,
                 color = TextSecondary
             )
@@ -1832,7 +1986,7 @@ private fun AddonsSettings(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "Add Custom Addon",
+                text = tr("Add Custom Addon"),
                 style = ArflixTypography.button,
                 color = Pink
             )
@@ -1989,7 +2143,7 @@ private fun AccountsSettings(
 ) {
     Column {
         Text(
-            text = "Linked Accounts",
+            text = tr("Linked Accounts"),
             style = ArflixTypography.sectionTitle,
             color = TextPrimary,
             modifier = Modifier.padding(bottom = 24.dp)
@@ -2066,12 +2220,12 @@ private fun AccountActionRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = title,
+                text = tr(title),
                 style = ArflixTypography.cardTitle,
                 color = TextPrimary
             )
             Text(
-                text = description,
+                text = tr(description),
                 style = ArflixTypography.caption,
                 color = TextSecondary
             )
@@ -2094,7 +2248,7 @@ private fun AccountActionRow(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = actionLabel,
+                text = tr(actionLabel),
                 style = ArflixTypography.label,
                 color = if (isEnabled) Pink else TextSecondary
             )
@@ -2129,12 +2283,12 @@ private fun SettingsActionRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = title,
+                text = tr(title),
                 style = ArflixTypography.cardTitle,
                 color = TextPrimary
             )
             Text(
-                text = description,
+                text = tr(description),
                 style = ArflixTypography.caption,
                 color = TextSecondary
             )
@@ -2201,12 +2355,12 @@ private fun AccountRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = name,
+                    text = tr(name),
                     style = ArflixTypography.cardTitle,
                     color = TextPrimary
                 )
                 Text(
-                    text = description,
+                    text = tr(description),
                     style = ArflixTypography.caption,
                     color = TextSecondary
                 )
@@ -2227,7 +2381,7 @@ private fun AccountRow(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "CONNECTED",
+                        text = tr("CONNECTED"),
                         style = ArflixTypography.label,
                         color = SuccessGreen
                     )
@@ -2253,7 +2407,7 @@ private fun AccountRow(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "CONNECT",
+                        text = tr("CONNECT"),
                         style = ArflixTypography.label,
                         color = Pink
                     )
@@ -2276,7 +2430,7 @@ private fun AccountRow(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Go to: $authUrl",
+                text = tr("Go to: $authUrl"),
                 style = ArflixTypography.caption,
                 color = TextSecondary.copy(alpha = 0.9f)
             )
@@ -2285,7 +2439,7 @@ private fun AccountRow(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Enter code:",
+                    text = tr("Enter code:"),
                     style = ArflixTypography.caption,
                     color = TextSecondary.copy(alpha = 0.9f)
                 )
@@ -2307,7 +2461,7 @@ private fun AccountRow(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Waiting for authorization... (Press OK to cancel)",
+                text = tr("Waiting for authorization... (Press OK to cancel)"),
                 style = ArflixTypography.caption,
                 color = TextSecondary.copy(alpha = 0.7f)
             )
@@ -2433,7 +2587,7 @@ private fun InputModalLegacy(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = title,
+                text = tr(title),
                 style = ArflixTypography.sectionTitle,
                 color = TextPrimary,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -2445,7 +2599,7 @@ private fun InputModalLegacy(
 
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = field.label,
+                        text = tr(field.label),
                         style = ArflixTypography.caption,
                         color = if (isFocused) Pink else TextSecondary,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -2457,7 +2611,7 @@ private fun InputModalLegacy(
                         singleLine = true,
                         placeholder = {
                             Text(
-                                text = "Enter ${field.label.lowercase()}...",
+                                text = tr("Enter ${field.label.lowercase()}..."),
                                 color = TextSecondary.copy(alpha = 0.5f)
                             )
                         },
@@ -2515,7 +2669,7 @@ private fun InputModalLegacy(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Paste from Clipboard",
+                    text = tr("Paste from Clipboard"),
                     style = ArflixTypography.button,
                     color = if (isPasteFocused) Pink else TextSecondary
                 )
@@ -2546,7 +2700,7 @@ private fun InputModalLegacy(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = tr("Cancel"),
                         style = ArflixTypography.button,
                         color = if (isCancelFocused) TextPrimary else TextSecondary
                     )
@@ -2570,7 +2724,7 @@ private fun InputModalLegacy(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Confirm",
+                        text = tr("Confirm"),
                         style = ArflixTypography.button,
                         color = Color.White
                     )
@@ -2580,7 +2734,7 @@ private fun InputModalLegacy(
             // Hint text
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Press Enter to select • Navigate with D-pad",
+                text = tr("Press Enter to select"),
                 style = ArflixTypography.caption,
                 color = TextSecondary.copy(alpha = 0.5f)
             )
@@ -2602,6 +2756,7 @@ private fun InputModal(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val currentInterfaceLanguage = LocalInterfaceLanguage.current
     var focusedIndex by remember(title, fields.size) { mutableIntStateOf(0) }
     val totalItems = fields.size + 3 // inputs + paste + cancel + confirm
     val formMaxHeight = if (fields.size >= 4) 360.dp else 290.dp
@@ -2736,12 +2891,12 @@ private fun InputModal(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = title,
+                    text = tr(title),
                     style = ArflixTypography.sectionTitle,
                     color = TextPrimary
                 )
                 Text(
-                    text = "Use D-pad to move, press OK to edit a field",
+                    text = tr("Use D-pad to move, press OK to edit a field"),
                     style = ArflixTypography.caption,
                     color = TextSecondary.copy(alpha = 0.75f),
                     modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
@@ -2783,7 +2938,7 @@ private fun InputModal(
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = field.label,
+                                    text = tr(field.label),
                                     style = ArflixTypography.caption,
                                     color = if (isFocused) Pink else TextSecondary
                                 )
@@ -2807,7 +2962,10 @@ private fun InputModal(
                                             setText(field.value)
                                             setTextColor(android.graphics.Color.WHITE)
                                             setHintTextColor(android.graphics.Color.GRAY)
-                                            hint = field.placeholder.ifBlank { "Enter ${field.label.lowercase()}..." }
+                                            hint = localizeText(
+                                                field.placeholder.ifBlank { "Enter ${field.label.lowercase()}..." },
+                                                currentInterfaceLanguage
+                                            )
                                             textSize = 16f
                                             background = null
                                             setPadding(20, 14, 20, 14)
@@ -2890,7 +3048,7 @@ private fun InputModal(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Paste from Clipboard",
+                        text = tr("Paste from Clipboard"),
                         style = ArflixTypography.button,
                         color = if (isPasteFocused) Color.Black else Color.White
                     )
@@ -2919,7 +3077,7 @@ private fun InputModal(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Cancel",
+                            text = tr("Cancel"),
                             style = ArflixTypography.button,
                             color = if (isCancelFocused) Color.Black else Color.White
                         )
@@ -2942,7 +3100,7 @@ private fun InputModal(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Confirm",
+                            text = tr("Confirm"),
                             style = ArflixTypography.button,
                             color = if (isConfirmFocused) Color.Black else Color.White
                         )
@@ -2951,7 +3109,7 @@ private fun InputModal(
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "OK: edit/select • Back: close keyboard first",
+                    text = tr("OK: edit/select • Back: close keyboard first"),
                     style = ArflixTypography.caption,
                     color = TextSecondary.copy(alpha = 0.56f)
                 )
@@ -3024,7 +3182,7 @@ private fun SubtitlePickerModal(
                 .padding(28.dp)
         ) {
             Text(
-                text = title,
+                text = tr(title),
                 style = ArflixTypography.sectionTitle,
                 color = TextPrimary
             )
@@ -3054,7 +3212,7 @@ private fun SubtitlePickerModal(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = option,
+                            text = tr(option),
                             style = ArflixTypography.body,
                             color = if (isFocused) TextPrimary else TextSecondary,
                             modifier = Modifier.weight(1f)
@@ -3074,7 +3232,7 @@ private fun SubtitlePickerModal(
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Press Enter to select",
+                text = tr("Press Enter to select"),
                 style = ArflixTypography.caption,
                 color = TextSecondary.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center,

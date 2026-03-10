@@ -20,6 +20,7 @@ import com.arflix.tv.data.repository.TraktRepository
 import com.arflix.tv.data.repository.WatchHistoryRepository
 import com.arflix.tv.data.repository.WatchlistRepository
 import com.arflix.tv.util.Constants
+import com.arflix.tv.util.LanguageSettingsRepository
 import com.arflix.tv.util.settingsDataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,6 +30,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -158,6 +160,7 @@ class DetailsViewModel @Inject constructor(
     private val profileManager: ProfileManager,
     private val traktRepository: TraktRepository,
     private val streamRepository: StreamRepository,
+    private val languageSettingsRepository: LanguageSettingsRepository,
     private val tmdbApi: TmdbApi,
     private val watchHistoryRepository: WatchHistoryRepository,
     private val watchlistRepository: WatchlistRepository,
@@ -214,6 +217,30 @@ class DetailsViewModel @Inject constructor(
             revenue = primary.revenue ?: fallback.revenue,
             status = primary.status ?: fallback.status
         )
+    }
+
+    init {
+        observeMetadataLanguageChanges()
+    }
+
+    private fun observeMetadataLanguageChanges() {
+        viewModelScope.launch {
+            languageSettingsRepository.observeMetadataLanguage()
+                .drop(1)
+                .collect {
+                    mediaRepository.clearLanguageSensitiveCaches()
+                    watchlistRepository.clearWatchlistCache()
+                    val mediaId = currentMediaId
+                    if (mediaId <= 0) return@collect
+                    val mediaType = currentMediaType
+                    val season = if (mediaType == MediaType.TV) {
+                        _uiState.value.currentSeason.takeIf { it > 0 }
+                    } else {
+                        null
+                    }
+                    loadDetails(mediaType, mediaId, initialSeason = season)
+                }
+        }
     }
 
     fun loadDetails(mediaType: MediaType, mediaId: Int, initialSeason: Int? = null, initialEpisode: Int? = null) {

@@ -40,6 +40,7 @@ import com.arflix.tv.ui.theme.PurpleLight
 import com.arflix.tv.ui.theme.PurplePrimary
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 
 /**
  * Premium Player Loading Screen
@@ -257,7 +258,7 @@ fun PlayerLoadingScreen(
 
             // Loading message
             Text(
-                text = loadingMessage,
+                text = tr(loadingMessage),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = TextSecondary,
@@ -419,7 +420,7 @@ fun SourceLoadingScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
-                    text = "Resolving from $sourceName",
+                    text = tr("Resolving from $sourceName"),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
@@ -428,7 +429,7 @@ fun SourceLoadingScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Finding best quality stream...",
+                    text = tr("Finding best quality stream..."),
                     fontSize = 13.sp,
                     color = TextSecondary
                 )

@@ -26,6 +26,9 @@ import com.arflix.tv.data.repository.WatchlistRepository
 import com.arflix.tv.data.repository.SyncProgress
 import com.arflix.tv.data.repository.SyncStatus
 import com.arflix.tv.data.repository.SyncResult
+import com.arflix.tv.util.InterfaceLanguage
+import com.arflix.tv.util.LanguagePreferenceKeys
+import com.arflix.tv.util.MetadataLanguage
 import com.arflix.tv.ui.components.CARD_LAYOUT_MODE_LANDSCAPE
 import com.arflix.tv.ui.components.normalizeCardLayoutMode
 import com.arflix.tv.util.settingsDataStore
@@ -49,6 +52,8 @@ enum class ToastType {
 }
 
 data class SettingsUiState(
+    val interfaceLanguage: InterfaceLanguage = InterfaceLanguage.ENGLISH,
+    val metadataLanguage: MetadataLanguage = MetadataLanguage.ENGLISH,
     val defaultSubtitle: String = "Off",
     val subtitleOptions: List<String> = emptyList(),
     val defaultAudioLanguage: String = "Auto (Original)",
@@ -173,6 +178,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             // Load local preferences first
             val prefs = context.settingsDataStore.data.first()
+            val interfaceLanguage = InterfaceLanguage.fromStorageValue(prefs[LanguagePreferenceKeys.interfaceLanguage])
+            val metadataLanguage = MetadataLanguage.fromStorageValue(prefs[LanguagePreferenceKeys.metadataLanguage])
             var defaultSub = prefs[defaultSubtitleKey()] ?: "Off"
             val defaultAudio = prefs[defaultAudioLanguageKey()] ?: "Auto (Original)"
             val cardLayoutMode = normalizeCardLayoutMode(prefs[cardLayoutModeKey()])
@@ -204,6 +211,8 @@ class SettingsViewModel @Inject constructor(
             }
 
             _uiState.value = SettingsUiState(
+                interfaceLanguage = interfaceLanguage,
+                metadataLanguage = metadataLanguage,
                 defaultSubtitle = defaultSub,
                 subtitleOptions = subtitleOptions,
                 defaultAudioLanguage = defaultAudio,
@@ -223,6 +232,28 @@ class SettingsViewModel @Inject constructor(
                 catalogs = existingCatalogs,
                 addons = addons
             )
+        }
+    }
+
+    fun setInterfaceLanguage(language: InterfaceLanguage) {
+        viewModelScope.launch {
+            context.settingsDataStore.edit { prefs ->
+                prefs[LanguagePreferenceKeys.interfaceLanguage] = language.storageValue
+            }
+            _uiState.value = _uiState.value.copy(interfaceLanguage = language)
+        }
+    }
+
+    fun setMetadataLanguage(language: MetadataLanguage) {
+        viewModelScope.launch {
+            context.settingsDataStore.edit { prefs ->
+                prefs[LanguagePreferenceKeys.metadataLanguage] = language.storageValue
+            }
+            mediaRepository.clearLanguageSensitiveCaches()
+            watchlistRepository.clearWatchlistCache()
+            traktRepository.clearContinueWatchingCache()
+            traktRepository.invalidateWatchedCache()
+            _uiState.value = _uiState.value.copy(metadataLanguage = language)
         }
     }
 
@@ -1426,7 +1457,5 @@ class SettingsViewModel @Inject constructor(
         traktPollingJob?.cancel()
     }
 }
-
-
 
 

@@ -32,6 +32,7 @@ import com.arflix.tv.ui.theme.PurpleLight
 import com.arflix.tv.ui.theme.PurplePrimary
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 
 /**
  * Premium ARVIO Loading Screen - Optimized for TV Performance
@@ -92,7 +93,7 @@ fun ArvioLoadingScreen(
                 Spacer(modifier = Modifier.height(30.dp))
 
                 Text(
-                    text = "Loading...",
+                    text = tr("Loading..."),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = TextSecondary,

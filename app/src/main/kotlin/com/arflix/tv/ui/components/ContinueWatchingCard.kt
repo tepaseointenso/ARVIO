@@ -33,6 +33,7 @@ import com.arflix.tv.data.model.MediaType
 import com.arflix.tv.ui.skin.ArvioFocusableSurface
 import com.arflix.tv.ui.skin.ArvioSkin
 import com.arflix.tv.ui.skin.rememberArvioCardShape
+import com.arflix.tv.util.tr
 
 /**
  * Continue Watching card with progress bar.
@@ -147,7 +148,7 @@ fun ContinueWatchingCard(
                     }
                 }
 
-                val typeLabel = if (item.mediaType == MediaType.TV) "TV" else "MOVIE"
+                val typeLabel = if (item.mediaType == MediaType.TV) tr("TV") else tr("Movie").uppercase()
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -285,4 +286,3 @@ fun ContinueWatchingCardCompact(
         }
     }
 }
-

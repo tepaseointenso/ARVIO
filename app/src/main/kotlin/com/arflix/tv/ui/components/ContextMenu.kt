@@ -56,6 +56,7 @@ import com.arflix.tv.ui.theme.BackgroundElevated
 import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 
 /**
  * Context menu action
@@ -207,7 +208,7 @@ fun ContextMenu(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Press Back to cancel",
+                        text = tr("Press Back to cancel"),
                         style = ArflixTypography.caption,
                         color = TextSecondary
                     )
@@ -248,7 +249,7 @@ private fun ContextMenuItem(
         Spacer(modifier = Modifier.width(16.dp))
         
         Text(
-            text = action.label,
+            text = tr(action.label),
             style = ArflixTypography.body,
             color = if (isFocused) TextPrimary else action.color
         )

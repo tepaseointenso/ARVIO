@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.arflix.tv.data.model.MediaItem
 import com.arflix.tv.data.model.MediaType
 import com.arflix.tv.data.repository.MediaRepository
+import com.arflix.tv.util.LanguageSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -30,7 +32,8 @@ data class SearchUiState(
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val languageSettingsRepository: LanguageSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -39,6 +42,25 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var cachedSuggestionQuery: String = ""
     private var cachedSuggestionResults: List<MediaItem> = emptyList()
+
+    init {
+        observeMetadataLanguageChanges()
+    }
+
+    private fun observeMetadataLanguageChanges() {
+        viewModelScope.launch {
+            languageSettingsRepository.observeMetadataLanguage()
+                .drop(1)
+                .collect {
+                    mediaRepository.clearLanguageSensitiveCaches()
+                    cachedSuggestionQuery = ""
+                    cachedSuggestionResults = emptyList()
+                    if (_uiState.value.query.isNotBlank()) {
+                        search()
+                    }
+                }
+        }
+    }
 
     fun addChar(char: String) {
         updateQuery(_uiState.value.query + char)

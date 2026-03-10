@@ -36,6 +36,7 @@ import com.arflix.tv.ui.theme.ArflixTypography
 import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.SuccessGreen
 import com.arflix.tv.ui.theme.TextPrimary
+import com.arflix.tv.util.tr
 import kotlinx.coroutines.delay
 
 enum class ToastType {
@@ -108,7 +109,7 @@ fun Toast(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = message,
+                    text = tr(message),
                     style = ArflixTypography.body,
                     color = TextPrimary
                 )

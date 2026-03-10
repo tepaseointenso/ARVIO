@@ -36,6 +36,7 @@ import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.SuccessGreen
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 
 /**
  * Source info overlay for the video player
@@ -182,7 +183,7 @@ fun PlayerInfoBar(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "LIVE",
+                    text = tr("LIVE"),
                     style = ArflixTypography.badge,
                     color = Color.White
                 )

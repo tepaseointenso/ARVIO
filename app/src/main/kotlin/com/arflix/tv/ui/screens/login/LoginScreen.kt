@@ -37,6 +37,7 @@ import androidx.tv.material3.Text
 import com.arflix.tv.data.repository.AuthState
 import com.arflix.tv.ui.components.*
 import com.arflix.tv.ui.theme.*
+import com.arflix.tv.util.tr
 
 /**
  * Login Screen with Email/Password - Optimized for TV
@@ -184,7 +185,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
-                    text = "Your library, tuned for TV.",
+                    text = tr("Your library, tuned for TV."),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White.copy(alpha = 0.85f)
@@ -193,7 +194,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Keep your watchlist, history, and Trakt sync tied to your account.",
+                    text = tr("Keep your watchlist, history, and Trakt sync tied to your account."),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     color = Color.White.copy(alpha = 0.6f),
@@ -215,7 +216,7 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (isSignUpMode) "Create your account" else "Sign in to continue",
+                    text = tr(if (isSignUpMode) "Create your account" else "Sign in to continue"),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White.copy(alpha = 0.8f)
@@ -302,7 +303,7 @@ fun LoginScreen(
                             viewModel.signIn(email, password)
                         }
                     },
-                    text = if (isSignUpMode) "Sign Up" else "Sign In",
+                    text = tr(if (isSignUpMode) "Sign Up" else "Sign In"),
                     isPrimary = true,
                     isFocused = focusedField == "button",
                     enabled = !uiState.isLoading,
@@ -317,7 +318,7 @@ fun LoginScreen(
                 // Toggle Sign In / Sign Up
                 GradientButton(
                     onClick = { isSignUpMode = !isSignUpMode },
-                    text = if (isSignUpMode) "Already have an account? Sign In" else "Don't have an account? Sign Up",
+                    text = tr(if (isSignUpMode) "Already have an account? Sign In" else "Don't have an account? Sign Up"),
                     isPrimary = false,
                     isFocused = focusedField == "toggle",
                     enabled = !uiState.isLoading,
@@ -418,7 +419,7 @@ private fun PremiumTextField(
                 Box {
                     if (value.isEmpty()) {
                         Text(
-                            text = placeholder,
+                            text = tr(placeholder),
                             fontSize = 15.sp,
                             color = TextTertiary
                         )
@@ -489,7 +490,7 @@ private fun GradientButton(
             shape = ButtonDefaults.shape(RoundedCornerShape(12.dp))
         ) {
             Text(
-                text = text,
+                text = tr(text),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (isFocused) focusedText else if (isPrimary) TextPrimary else TextSecondary

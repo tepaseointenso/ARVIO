@@ -73,6 +73,8 @@ import com.arflix.tv.ui.theme.ArflixTypography
 import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.LocalInterfaceLanguage
+import com.arflix.tv.util.localizeText
 
 // Modern glassy colors
 private val GlassWhite = Color.White.copy(alpha = 0.08f)
@@ -99,6 +101,9 @@ fun StreamSelector(
     onSelect: (StreamSource) -> Unit = {},
     onClose: () -> Unit = {}
 ) {
+    val interfaceLanguage = LocalInterfaceLanguage.current
+    val t: (String) -> String = { value -> localizeText(value, interfaceLanguage) }
+
     var focusedIndex by remember { mutableIntStateOf(0) }
     var focusedTabIndex by remember { mutableIntStateOf(0) }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -140,8 +145,8 @@ fun StreamSelector(
     }
 
     // Tab labels: "All sources" + addon labels
-    val tabLabels = remember(addonTabs) {
-        listOf("All sources") + addonTabs.map { it.label }
+    val tabLabels = remember(addonTabs, interfaceLanguage) {
+        listOf(localizeText("All sources", interfaceLanguage)) + addonTabs.map { it.label }
     }
 
     // Sort streams: quality (4K > 1080p > 720p), then largest size first
@@ -310,7 +315,7 @@ fun StreamSelector(
                         // Header without icon
                         Column(modifier = Modifier.padding(bottom = 20.dp)) {
                             Text(
-                                text = "Sources",
+                                text = t("Sources"),
                                 style = ArflixTypography.label.copy(
                                     fontSize = 12.sp,
                                     letterSpacing = 1.sp
@@ -318,7 +323,7 @@ fun StreamSelector(
                                 color = TextSecondary
                             )
                             Text(
-                                text = title.ifEmpty { "Select Source" },
+                                text = title.ifEmpty { t("Select Source") },
                                 style = ArflixTypography.body.copy(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
@@ -331,7 +336,7 @@ fun StreamSelector(
 
                         if (subtitle.isNotEmpty()) {
                             Text(
-                                text = subtitle,
+                                text = t(subtitle),
                                 style = ArflixTypography.caption.copy(fontSize = 13.sp),
                                 color = TextSecondary.copy(alpha = 0.7f),
                                 maxLines = 1,
@@ -346,7 +351,7 @@ fun StreamSelector(
                                 MiniStatCard(
                                     icon = Icons.Default.Storage,
                                     value = streams.size.toString(),
-                                    label = "Total",
+                                    label = t("Total"),
                                     color = AccentBlue,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -373,7 +378,7 @@ fun StreamSelector(
                         if (tabLabels.size > 1) {
                             Spacer(modifier = Modifier.height(20.dp))
                             Text(
-                                text = "FILTER BY SOURCE",
+                                text = t("FILTER BY SOURCE"),
                                 style = ArflixTypography.label.copy(
                                     fontSize = 10.sp,
                                     letterSpacing = 1.sp
@@ -407,7 +412,7 @@ fun StreamSelector(
                 ) {
                     // Header
                     Text(
-                        text = "Available Sources",
+                        text = t("Available Sources"),
                         style = ArflixTypography.body.copy(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold
@@ -425,7 +430,7 @@ fun StreamSelector(
                                 LoadingIndicator(color = Pink, size = 48.dp)
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "Finding sources...",
+                                    text = t("Finding sources..."),
                                     style = ArflixTypography.body.copy(fontSize = 14.sp),
                                     color = TextSecondary
                                 )
@@ -459,7 +464,7 @@ fun StreamSelector(
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = if (!hasStreamingAddons) "No Streaming Addons" else "No sources found",
+                                    text = if (!hasStreamingAddons) t("No Streaming Addons") else t("No sources found"),
                                     style = ArflixTypography.body.copy(
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Medium
@@ -469,9 +474,9 @@ fun StreamSelector(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = if (!hasStreamingAddons)
-                                        "Go to Settings \u2192 Addons to add\na streaming addon"
+                                        t("Go to Settings \u2192 Addons to add\na streaming addon")
                                     else
-                                        "Try adding more addons",
+                                        t("Try adding more addons"),
                                     style = ArflixTypography.caption.copy(fontSize = 12.sp),
                                     color = TextSecondary.copy(alpha = 0.6f),
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -842,4 +847,3 @@ private fun qualityScore(quality: String): Int {
         else -> 0
     }
 }
-

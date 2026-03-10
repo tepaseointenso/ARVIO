@@ -109,6 +109,7 @@ import com.arflix.tv.ui.theme.PurpleLight
 import com.arflix.tv.ui.theme.PurplePrimary
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
@@ -195,6 +196,16 @@ fun PlayerScreen(
     // Audio tracks from ExoPlayer
     var audioTracks by remember { mutableStateOf<List<AudioTrackInfo>>(emptyList()) }
     var selectedAudioIndex by remember { mutableIntStateOf(0) }
+
+    val subtitleMenuOrdering = remember(uiState.subtitles, uiState.preferredSubtitleLanguage) {
+        buildSubtitleMenuOrdering(
+            subtitles = uiState.subtitles,
+            preferredSubtitleLanguage = uiState.preferredSubtitleLanguage
+        )
+    }
+    val orderedSubtitles = subtitleMenuOrdering.ordered
+    val favoriteSubtitleKeys = subtitleMenuOrdering.favoriteKeys
+    val favoriteSubtitleLabel = subtitleMenuOrdering.favoriteDisplayLabel
 
     // Error modal focus
     var errorModalFocusIndex by remember { mutableIntStateOf(0) }
@@ -1155,7 +1166,7 @@ fun PlayerScreen(
                     // Handle subtitle/audio menu
                     if (showSubtitleMenu) {
                         val maxIndex = if (subtitleMenuTab == 0) {
-                            uiState.subtitles.size + 1 // +1 for "Off"
+                            orderedSubtitles.size + 1 // +1 for "Off"
                         } else {
                             audioTracks.size.coerceAtLeast(1)
                         }
@@ -1194,7 +1205,10 @@ fun PlayerScreen(
                                 // Switch to Subtitles tab
                                 if (subtitleMenuTab != 0) {
                                     subtitleMenuTab = 0
-                                    subtitleMenuIndex = 0
+                                    subtitleMenuIndex = subtitleMenuIndexForSelection(
+                                        orderedSubtitles,
+                                        uiState.selectedSubtitle
+                                    )
                                 }
                                 true
                             }
@@ -1212,7 +1226,7 @@ fun PlayerScreen(
                                     if (subtitleMenuIndex == 0) {
                                         viewModel.disableSubtitles()
                                     } else {
-                                        uiState.subtitles.getOrNull(subtitleMenuIndex - 1)?.let { viewModel.selectSubtitle(it) }
+                                        orderedSubtitles.getOrNull(subtitleMenuIndex - 1)?.let { viewModel.selectSubtitle(it) }
                                     }
                                 } else {
                                     // Audio selection
@@ -1427,10 +1441,10 @@ fun PlayerScreen(
 
                     Text(
                         text = when {
-                            uiState.isLoadingSubtitles -> "Fetching subtitles..."
-                            uiState.isLoadingStreams -> "Loading streams..."
-                            uiState.selectedStreamUrl != null && !hasPlaybackStarted -> "Starting playback..."
-                            else -> "Loading..."
+                            uiState.isLoadingSubtitles -> tr("Fetching subtitles...")
+                            uiState.isLoadingStreams -> tr("Loading streams...")
+                            uiState.selectedStreamUrl != null && !hasPlaybackStarted -> tr("Starting playback...")
+                            else -> tr("Loading...")
                         },
                         style = ArflixTypography.body,
                         color = TextSecondary
@@ -1774,7 +1788,7 @@ fun PlayerScreen(
                         // Subtitle/Audio button with proper TV focus
                         var subtitleButtonFocused by remember { mutableStateOf(false) }
                         PlayerTextButtonFocusable(
-                            text = "Subtitles & Audio",
+                            text = tr("Subtitles & Audio"),
                             isFocused = subtitleButtonFocused,
                             focusRequester = subtitleButtonFocusRequester,
                             onFocusChanged = { focused ->
@@ -1783,7 +1797,11 @@ fun PlayerScreen(
                             },
                             onClick = {
                                 showSubtitleMenu = true
-                                subtitleMenuIndex = 0
+                                subtitleMenuTab = 0
+                                subtitleMenuIndex = subtitleMenuIndexForSelection(
+                                    orderedSubtitles,
+                                    uiState.selectedSubtitle
+                                )
                             },
                             onLeftKey = {
                                 playButtonFocusRequester.requestFocus()
@@ -1801,7 +1819,7 @@ fun PlayerScreen(
                         // Sources button
                         var sourceButtonFocused by remember { mutableStateOf(false) }
                         PlayerTextButtonFocusable(
-                            text = "Sources",
+                            text = tr("Sources"),
                             isFocused = sourceButtonFocused,
                             focusRequester = sourceButtonFocusRequester,
                             onFocusChanged = { sourceButtonFocused = it },
@@ -1830,7 +1848,7 @@ fun PlayerScreen(
                             // Next episode button
                             var nextEpisodeButtonFocused by remember { mutableStateOf(false) }
                             PlayerTextButtonFocusable(
-                                text = "Next Episode",
+                                text = tr("Next Episode"),
                                 isFocused = nextEpisodeButtonFocused,
                                 focusRequester = nextEpisodeButtonFocusRequester,
                                 onFocusChanged = { nextEpisodeButtonFocused = it },
@@ -1869,21 +1887,27 @@ fun PlayerScreen(
             exit = fadeOut()
         ) {
             SubtitleMenu(
-                subtitles = uiState.subtitles,
+                subtitles = orderedSubtitles,
                 selectedSubtitle = uiState.selectedSubtitle,
+                favoriteSubtitleKeys = favoriteSubtitleKeys,
+                favoriteLanguageLabel = favoriteSubtitleLabel,
                 audioTracks = audioTracks,
                 selectedAudioIndex = selectedAudioIndex,
                 activeTab = subtitleMenuTab,
                 focusedIndex = subtitleMenuIndex,
                 onTabChanged = { tab ->
                     subtitleMenuTab = tab
-                    subtitleMenuIndex = 0
+                    subtitleMenuIndex = if (tab == 0) {
+                        subtitleMenuIndexForSelection(orderedSubtitles, uiState.selectedSubtitle)
+                    } else {
+                        0
+                    }
                 },
                 onSelectSubtitle = { index ->
                     if (index == 0) {
                         viewModel.disableSubtitles()
                     } else {
-                        uiState.subtitles.getOrNull(index - 1)?.let { viewModel.selectSubtitle(it) }
+                        orderedSubtitles.getOrNull(index - 1)?.let { viewModel.selectSubtitle(it) }
                     }
                     showSubtitleMenu = false
                     showControls = true
@@ -2085,7 +2109,7 @@ fun PlayerScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
-                        text = if (isSetup) "Addon Setup Required" else "Playback Error",
+                        text = if (isSetup) tr("Addon Setup Required") else tr("Playback Error"),
                         style = ArflixTypography.sectionTitle,
                         color = TextPrimary
                     )
@@ -2093,7 +2117,7 @@ fun PlayerScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = uiState.error ?: "An unknown error occurred",
+                        text = tr(uiState.error ?: "An unknown error occurred"),
                         style = ArflixTypography.body,
                         color = TextSecondary,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -2103,7 +2127,7 @@ fun PlayerScreen(
                     if (isSetup) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "ARVIO uses community streaming addons to find video sources. Without at least one streaming addon, content cannot be played.",
+                            text = tr("ARVIO uses community streaming addons to find video sources. Without at least one streaming addon, content cannot be played."),
                             style = ArflixTypography.caption,
                             color = TextSecondary.copy(alpha = 0.7f),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -2116,7 +2140,7 @@ fun PlayerScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         if (!isSetup) {
                             ErrorButton(
-                                text = "TRY AGAIN",
+                                text = tr("TRY AGAIN"),
                                 icon = Icons.Default.Refresh,
                                 isFocused = errorModalFocusIndex == 0,
                                 isPrimary = true,
@@ -2124,7 +2148,7 @@ fun PlayerScreen(
                             )
                         }
                         ErrorButton(
-                            text = "GO BACK",
+                            text = tr("GO BACK"),
                             isFocused = if (isSetup) errorModalFocusIndex == 0 else errorModalFocusIndex == 1,
                             isPrimary = isSetup,
                             onClick = onBack
@@ -2334,6 +2358,167 @@ private fun getFullLanguageName(code: String?): String {
     }
 }
 
+private data class SubtitleMenuOrdering(
+    val ordered: List<Subtitle>,
+    val favoriteKeys: Set<String>,
+    val favoriteDisplayLabel: String?
+)
+
+private fun buildSubtitleMenuOrdering(
+    subtitles: List<Subtitle>,
+    preferredSubtitleLanguage: String
+): SubtitleMenuOrdering {
+    val aliases = buildPreferredSubtitleAliases(preferredSubtitleLanguage)
+    if (aliases.isEmpty()) {
+        return SubtitleMenuOrdering(
+            ordered = subtitles,
+            favoriteKeys = emptySet(),
+            favoriteDisplayLabel = null
+        )
+    }
+
+    val favorites = subtitles.filter { subtitle ->
+        subtitleMatchesPreferredLanguage(subtitle, aliases)
+    }
+    if (favorites.isEmpty()) {
+        return SubtitleMenuOrdering(
+            ordered = subtitles,
+            favoriteKeys = emptySet(),
+            favoriteDisplayLabel = null
+        )
+    }
+
+    val favoriteKeys = favorites.mapTo(mutableSetOf()) { subtitleMenuTrackKey(it) }
+    val others = subtitles.filterNot { subtitle ->
+        subtitleMenuTrackKey(subtitle) in favoriteKeys
+    }
+
+    return SubtitleMenuOrdering(
+        ordered = favorites + others,
+        favoriteKeys = favoriteKeys,
+        favoriteDisplayLabel = preferredSubtitleSectionLabel(preferredSubtitleLanguage)
+    )
+}
+
+private fun subtitleMenuIndexForSelection(
+    subtitles: List<Subtitle>,
+    selectedSubtitle: Subtitle?
+): Int {
+    if (selectedSubtitle == null) return 0
+    val selectedIndex = subtitles.indexOfFirst { subtitle ->
+        subtitleTracksMatch(subtitle, selectedSubtitle)
+    }
+    return if (selectedIndex >= 0) selectedIndex + 1 else 0
+}
+
+private fun subtitleMenuTrackKey(subtitle: Subtitle): String {
+    val id = subtitle.id.trim()
+    if (id.isNotBlank()) return "id:$id"
+    val url = subtitle.url.trim()
+    if (url.isNotBlank()) return "url:$url"
+    return "meta:${subtitle.lang.trim().lowercase()}|${subtitle.label.trim().lowercase()}"
+}
+
+private fun subtitleTracksMatch(a: Subtitle, b: Subtitle): Boolean {
+    val aId = a.id.trim()
+    val bId = b.id.trim()
+    if (aId.isNotBlank() && bId.isNotBlank()) return aId == bId
+
+    val aUrl = a.url.trim()
+    val bUrl = b.url.trim()
+    if (aUrl.isNotBlank() && bUrl.isNotBlank()) return aUrl == bUrl
+
+    return a.lang.equals(b.lang, ignoreCase = true) &&
+        a.label.equals(b.label, ignoreCase = true)
+}
+
+private fun buildPreferredSubtitleAliases(preference: String): Set<String> {
+    val normalized = preference.trim()
+    if (normalized.isBlank()) return emptySet()
+    val lower = normalized.lowercase()
+    if (lower in setOf("off", "none", "disabled", "desactivado", "auto", "auto (original)", "original")) {
+        return emptySet()
+    }
+
+    val tokens = normalizeLanguageTokens(normalized)
+    if (tokens.isEmpty()) return emptySet()
+
+    return tokens.flatMapTo(mutableSetOf()) { token ->
+        when (token) {
+            "es" -> setOf("es", "spa", "spanish", "espanol", "español", "es-419", "latino", "latam", "castellano")
+            "en" -> setOf("en", "eng", "english", "ingles", "inglés")
+            "pt" -> setOf("pt", "por", "portuguese", "portugues", "português")
+            "pt-br" -> setOf("pt-br", "pob", "brazilian", "brasil", "brasileiro")
+            else -> setOf(token)
+        }
+    }
+}
+
+private fun subtitleMatchesPreferredLanguage(subtitle: Subtitle, aliases: Set<String>): Boolean {
+    val subtitleTokens = normalizeLanguageTokens("${subtitle.lang} ${subtitle.label}")
+    return subtitleTokens.any { it in aliases }
+}
+
+private fun normalizeLanguageTokens(raw: String): Set<String> {
+    if (raw.isBlank()) return emptySet()
+    val cleaned = raw
+        .lowercase()
+        .replace("(", " ")
+        .replace(")", " ")
+        .replace("_", "-")
+        .replace("/", " ")
+        .replace(",", " ")
+        .replace(".", " ")
+        .trim()
+
+    val rawTokens = cleaned.split(Regex("\\s+")).filter { it.isNotBlank() }
+    val expanded = mutableSetOf<String>()
+    rawTokens.forEach { token ->
+        expanded += token
+        if ('-' in token) {
+            expanded += token.substringBefore('-')
+        }
+    }
+
+    val normalized = mutableSetOf<String>()
+    expanded.forEach { token ->
+        when (token) {
+            "spa", "spanish", "espanol", "español", "castellano", "latino", "latam", "es-419", "es419" -> {
+                normalized += "es"
+                normalized += "spa"
+                normalized += "es-419"
+                normalized += "latino"
+                normalized += "latam"
+                normalized += "spanish"
+            }
+            "eng", "english", "ingles", "inglés" -> {
+                normalized += "en"
+                normalized += "eng"
+                normalized += "english"
+            }
+            "portuguese", "portugues", "português", "por" -> {
+                normalized += "pt"
+                normalized += "por"
+            }
+            "pob", "ptbr", "pt-br", "brazilian", "brasileiro", "brasil" -> {
+                normalized += "pt-br"
+                normalized += "pob"
+            }
+            else -> normalized += token
+        }
+    }
+    return normalized
+}
+
+private fun preferredSubtitleSectionLabel(preference: String): String {
+    val aliases = buildPreferredSubtitleAliases(preference)
+    return if ("es" in aliases || "spa" in aliases || "es-419" in aliases || "latino" in aliases) {
+        "Spanish / Spanish (Latin America)"
+    } else {
+        preference
+    }
+}
+
 private fun handleSubtitleMenuKey(
     key: Key,
     currentIndex: Int,
@@ -2368,6 +2553,8 @@ private fun handleSubtitleMenuKey(
 private fun SubtitleMenu(
     subtitles: List<Subtitle>,
     selectedSubtitle: Subtitle?,
+    favoriteSubtitleKeys: Set<String>,
+    favoriteLanguageLabel: String?,
     audioTracks: List<AudioTrackInfo>,
     selectedAudioIndex: Int,
     activeTab: Int,
@@ -2419,12 +2606,12 @@ private fun SubtitleMenu(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TabButton(
-                    text = "Subtitles",
+                    text = tr("Subtitles"),
                     isSelected = activeTab == 0,
                     onClick = { onTabChanged(0) }
                 )
                 TabButton(
-                    text = "Audio",
+                    text = tr("Audio"),
                     isSelected = activeTab == 1,
                     onClick = { onTabChanged(1) }
                 )
@@ -2433,6 +2620,10 @@ private fun SubtitleMenu(
             // Content based on active tab
             Box(modifier = Modifier.height(300.dp)) {
                 if (activeTab == 0) {
+                    val favoriteCount = subtitles
+                        .takeWhile { subtitle -> subtitleMenuTrackKey(subtitle) in favoriteSubtitleKeys }
+                        .size
+
                     // Subtitles tab
                     LazyColumn(
                         state = subtitleListState,
@@ -2441,7 +2632,7 @@ private fun SubtitleMenu(
                     ) {
                         item {
                             TrackMenuItem(
-                                label = "Off",
+                                label = tr("Off"),
                                 subtitle = null,
                                 isSelected = selectedSubtitle == null,
                                 isFocused = focusedIndex == 0,
@@ -2450,6 +2641,19 @@ private fun SubtitleMenu(
                         }
 
                         itemsIndexed(subtitles) { index, subtitle ->
+                            if (index == 0 && favoriteCount > 0) {
+                                SubtitleMenuSectionHeader(
+                                    title = tr("Favorite language"),
+                                    subtitle = favoriteLanguageLabel?.let { tr(it) }
+                                )
+                            }
+                            if (index == favoriteCount && favoriteCount in 1 until subtitles.size) {
+                                SubtitleMenuSectionHeader(
+                                    title = tr("All subtitle languages"),
+                                    subtitle = null
+                                )
+                            }
+
                             // Use actual track label as main text, full language name as secondary
                             val trackLabel = subtitle.label.ifBlank { subtitle.lang }
                             val languageInfo = getFullLanguageName(subtitle.lang)
@@ -2461,7 +2665,7 @@ private fun SubtitleMenu(
                             TrackMenuItem(
                                 label = trackLabel,
                                 subtitle = subtitleInfo,
-                                isSelected = selectedSubtitle?.id == subtitle.id,
+                                isSelected = selectedSubtitle?.let { subtitleTracksMatch(it, subtitle) } == true,
                                 isFocused = focusedIndex == index + 1,
                                 onClick = { onSelectSubtitle(index + 1) }
                             )
@@ -2477,7 +2681,7 @@ private fun SubtitleMenu(
                         if (audioTracks.isEmpty()) {
                             item {
                                 Text(
-                                    text = "No audio tracks available",
+                                    text = tr("No audio tracks available"),
                                     style = ArflixTypography.body,
                                     color = TextSecondary,
                                     modifier = Modifier.padding(16.dp)
@@ -2521,9 +2725,47 @@ private fun SubtitleMenu(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "← → Switch tabs • ↑↓ Navigate • BACK Close",
+                    text = tr("← → Switch tabs • ↑↓ Navigate • BACK Close"),
                     style = ArflixTypography.caption,
                     color = TextSecondary.copy(alpha = 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+private fun SubtitleMenuSectionHeader(
+    title: String,
+    subtitle: String?
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp, bottom = 2.dp)
+            .background(
+                color = Pink.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = Pink.copy(alpha = 0.55f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 10.dp, vertical = 7.dp)
+    ) {
+        Column {
+            Text(
+                text = title,
+                style = ArflixTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                color = Color.White
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    style = ArflixTypography.caption.copy(fontSize = 10.sp),
+                    color = Color.White.copy(alpha = 0.82f)
                 )
             }
         }

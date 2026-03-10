@@ -96,6 +96,7 @@ import com.arflix.tv.ui.theme.BackgroundDark
 import com.arflix.tv.ui.theme.Pink
 import com.arflix.tv.ui.theme.TextPrimary
 import com.arflix.tv.ui.theme.TextSecondary
+import com.arflix.tv.util.tr
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -797,7 +798,7 @@ private fun CategoryRail(
             .padding(8.dp)
     ) {
         Text(
-            text = "Categories",
+            text = tr("Categories"),
             style = ArflixTypography.caption.copy(fontSize = 12.sp, letterSpacing = 0.8.sp),
             color = TextSecondary.copy(alpha = 0.7f),
             modifier = Modifier.padding(start = 6.dp, bottom = 6.dp, top = 2.dp)
@@ -947,7 +948,7 @@ private fun FullscreenEpgOverlay(
                 if (nowProgram != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "NOW",
+                            text = tr("NOW"),
                             style = ArflixTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                             color = Color.Black,
                             modifier = Modifier
@@ -1005,7 +1006,7 @@ private fun FullscreenEpgOverlay(
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "LIVE",
+                            text = tr("LIVE"),
                             style = ArflixTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                             color = Color.Black,
                             modifier = Modifier
@@ -1025,7 +1026,7 @@ private fun FullscreenEpgOverlay(
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "NEXT",
+                            text = tr("NEXT"),
                             style = ArflixTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
                             color = Color.White.copy(alpha = 0.8f),
                             modifier = Modifier
@@ -1082,9 +1083,9 @@ private fun HeroPreviewPanel(
                     modifier = Modifier.size(36.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Select a channel to start preview", style = ArflixTypography.body, color = TextSecondary)
+                Text(tr("Select a channel to start preview"), style = ArflixTypography.body, color = TextSecondary)
                 Spacer(modifier = Modifier.height(2.dp))
-                Text("OK: play  |  OK again: fullscreen", style = ArflixTypography.caption, color = TextSecondary.copy(alpha = 0.8f))
+                Text(tr("OK: play  |  OK again: fullscreen"), style = ArflixTypography.caption, color = TextSecondary.copy(alpha = 0.8f))
             }
         }
         return
@@ -1134,7 +1135,7 @@ private fun HeroPreviewPanel(
             if (nowProgram != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "NOW",
+                        text = tr("NOW"),
                         style = ArflixTypography.caption,
                         color = AccentGreen,
                         modifier = Modifier
@@ -1158,7 +1159,7 @@ private fun HeroPreviewPanel(
                 )
             } else {
                 Text(
-                    text = "Live",
+                    text = tr("Live"),
                     style = ArflixTypography.body,
                     color = Color.White.copy(alpha = 0.7f)
                 )
@@ -1168,7 +1169,7 @@ private fun HeroPreviewPanel(
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "NEXT",
+                        text = tr("NEXT"),
                         style = ArflixTypography.caption,
                         color = TextSecondary,
                         modifier = Modifier
@@ -1766,10 +1767,10 @@ private fun NotConfiguredPanel() {
                 modifier = Modifier.size(40.dp)
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Text("IPTV is not configured", style = ArflixTypography.sectionTitle, color = TextPrimary)
+            Text(tr("IPTV is not configured"), style = ArflixTypography.sectionTitle, color = TextPrimary)
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                "Open Settings and add your M3U URL.",
+                tr("Open Settings and add your M3U URL."),
                 style = ArflixTypography.body,
                 color = TextSecondary
             )
@@ -1782,4 +1783,3 @@ private val programTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 private fun formatProgramTime(utcMillis: Long): String {
     return programTimeFormatter.format(Instant.ofEpochMilli(utcMillis).atZone(ZoneId.systemDefault()))
 }
-

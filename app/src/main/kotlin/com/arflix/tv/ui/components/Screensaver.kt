@@ -31,6 +31,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
 import com.arflix.tv.ui.theme.ArflixTypography
 import com.arflix.tv.ui.theme.Pink
+import com.arflix.tv.util.tr
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -133,7 +134,7 @@ fun Screensaver(
                     .offset(y = (-20).dp)
             ) {
                 Text(
-                    text = "Press any key to continue",
+                    text = tr("Press any key to continue"),
                     style = ArflixTypography.caption,
                     color = Color.White.copy(alpha = 0.3f)
                 )
